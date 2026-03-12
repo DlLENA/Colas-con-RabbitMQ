@@ -40,7 +40,7 @@ Tener instalado Docker, Java 17 y Eclipse IDE con Maven.
 
 ### Paso 1: Levantar RabbitMQ
 Abrir una terminal o consola de comandos y ejecutar la siguiente instrucción para iniciar el contenedor de Docker con la interfaz de administración habilitada:
-docker run -d --hostname mi-rabbit --name servidor-banco -p 15672:15672 -p 5672:5672 rabbitmq:3-management
+docker run `-d --hostname mi-rabbit --name servidor-banco -p 15672:15672 -p 5672:5672 rabbitmq:3-management`
 
 ### Paso 2: Ejecutar el Producer
 Navegar al proyecto banco-producer en el IDE. Localizar la clase Main.java dentro del paquete principal y ejecutarla como Java Application. 
