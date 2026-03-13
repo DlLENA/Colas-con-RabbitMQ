@@ -49,3 +49,7 @@ El sistema comenzará a consultar la API origen de Amazon y publicará las trans
 ### Paso 3: Ejecutar el Consumer
 Navegar al proyecto banco-consumer en el IDE. Localizar la clase Main.java y ejecutarla como Java Application. El consumidor comenzará a extraer los mensajes 
 de las colas creadas por el Producer, inyectará los datos del alumno y enviará el POST a la API destino, mostrando en consola las confirmaciones de éxito y vaciando las colas.
+
+## ♫ Video 
+• https://drive.google.com/file/d/15cugdB3Xr27LYe_4fTNX2K0ugLnSFAon/view?usp=sharing
+
