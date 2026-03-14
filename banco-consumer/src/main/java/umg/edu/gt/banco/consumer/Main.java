@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class Main {
     private static final Set<String> BANK_QUEUES = Set.of("BANRURAL", "GYT", "BAC", "BI");
+                                                  
     private static final ObjectMapper mapper = new ObjectMapper();
     
     // URL del Endpoint POST 
@@ -82,9 +83,13 @@ public class Main {
             // datos solicitados
             tx.setNombre("Dilena Grijalva");         
             tx.setCarnet("0905-24-12697");        
-            tx.setCorreo("dgrijalvat1@miumg.edu.gt"); 
+            tx.setCorreo("dgrijalvat1@miumg.edu.gt");
+          
 
             String finalJson = mapper.writeValueAsString(tx);
+            
+            //para poder visualizar como se vera antes de enviarse a la base el inge walter 
+            //System.out.println("JSON armado: " + finalJson);
 
             // Invoca este endpoint POST (Header: application/json)
             HttpRequest request = HttpRequest.newBuilder()
@@ -111,3 +116,4 @@ public class Main {
         }
     }
 }
+

@@ -54,6 +54,7 @@ public class Main {
         }
     }
 
+    //metodo para enviar las solicitudes de las transacciones a RabbitMQ 
     private static int fetchAndPublish(HttpClient client, Channel channel) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -64,13 +65,14 @@ public class Main {
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        
             
             if (response.statusCode() != 200) {
                 System.err.println("❌ API devolvió status " + response.statusCode());
                 return 0;
             }
 
-            // MAGIA AQUÍ: Convertimos el JSON directamente a tu clase LoteTransacciones
+            //  Convertimos el JSON directamente a tu clase LoteTransacciones
             LoteTransacciones lote = mapper.readValue(response.body(), LoteTransacciones.class);
             
             // Si la API no devolvió transacciones, salimos
@@ -80,10 +82,11 @@ public class Main {
 
             int published = 0;
             
-            // Recorremos la lista de objetos Transaccion
+            // Recorremos la lista de objetos para las Transacciones que se le enviaran RabbitMQ 
             for (Transaccion tx : lote.getTransacciones()) {
                 String id = tx.getIdTransaccion();
                 String bank = tx.getBancoDestino();
+             
 
                 // Validamos que vengan datos correctos
                 if (id == null || id.isEmpty() || bank == null || bank.isEmpty()) {
@@ -108,6 +111,7 @@ public class Main {
                 // Publicamos en la cola dinámica
                 channel.basicPublish("", bank, null, payload);
                 published++;
+          
             }
             return published;
             

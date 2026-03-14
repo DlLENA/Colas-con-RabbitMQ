@@ -11,8 +11,9 @@ public class Transaccion {
     private String nombre; 
     private String carnet; 
     private String correo;
+   
 
-    public Transaccion() {}
+	public Transaccion() {}
 
     public String getIdTransaccion() { return idTransaccion; }
     public void setIdTransaccion(String idTransaccion) { this.idTransaccion = idTransaccion; }
