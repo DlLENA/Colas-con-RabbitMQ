@@ -32,7 +32,8 @@ public class Main {
                                                   
     private static final ObjectMapper mapper = new ObjectMapper();
     
-    private static final String API_POST_URL = "https://7e0d9ogwzd.execute-api.us-east-1.amazonaws.com/default/guardarTransacciones";
+  private static final String API_POST_URL = "https://7e0d9ogwzd.execute-api.us-east-1.amazonaws.com/default/FALLA";
+    		//guardarTransacciones";
     
     private static final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
