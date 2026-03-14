@@ -80,7 +80,11 @@ public class Main {
 	  
 	  //Justifica brevemente su respuesta 
 	  
-	  
+	  //se comienza con los  límites de Java (MAX_VALUE y MIN_VALUE) para asegurar que el primer 
+	  //número del arreglo los reemplace de inmediato
+	  //Si encontramos un nuevo máximo, antes de guardarlo, 
+	  //pasamos el valor anterior al segundo lugar (max2 = max1). Se hace igual con los mínimos.
+	  //Usamos condiciones como < max1 para evitar que un número repetido ocupe el primer y el segundo lugar al mismo tiempo.
 	  
 
 }
