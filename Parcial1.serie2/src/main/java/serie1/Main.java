@@ -10,13 +10,10 @@ public class Main {
 
 	        for (int num : numbers) {
 	            if (num == 5) {
-	                // Rule 3: +5 for every number equal to 5
 	                totalScore += 5;
 	            } else if (num % 2 == 0) {
-	                // Rule 1 & 4: +1 for even numbers (including 0)
 	                totalScore += 1;
 	            } else {
-	                // Rule 2: +3 for odd numbers except 5
 	                totalScore += 3;
 	            }
 	        }
@@ -24,6 +21,64 @@ public class Main {
 	        return totalScore;
 	    }
 	
+	  
+	  //Indicaciones 
+	  //Complejidad temporal O( )
+	  //Complejidad espacial O( )
+	  
+	  //Justifica brevemente su respuesta 
+	  
+	  
+	  
+	  //PROBLEMA 2 :  PUNTAJE DE ARREGLO 
+	  //Implementar el metodo public static int[] secondMinMax(int[] numbers)
+	  
+	  //descripcion: dado un arreglo de enteros, encuentre el segundo menor y el segundo mayor en una sola pasada.
+	  
+	  //reglas 
+	  //debe recorrer el arreglo una sola vez
+	  //no se permite ordenar el arreglo 
+	  //retornar un arreglo con el formato [segundoMenor, segundoMayor]
+	  //Puede asumir que el arreglo tiene al menos 2 elementos distintos 
+	  
+	  
+	  public static int[] secondMinMax(int[] numbers) {
+		    // Inicializamos con los valores 
+		    int min1 = Integer.MAX_VALUE;
+		    int min2 = Integer.MAX_VALUE;
+		    int max1 = Integer.MIN_VALUE;
+		    int max2 = Integer.MIN_VALUE;
+
+		    for (int num : numbers) {
+		        // para los segundos mayores 
+		        if (num > max1) {
+		            max2 = max1; 
+		        } else if (num > max2 && num < max1) {
+		            max2 = num;
+		        }
+		        
+		       
+		        //para los segundos minimos 
+		        if (num < min1) {
+		            min2 = min1; 
+		            min1 = num;  
+		        } else if (num < min2 && num > min1) {
+		            min2 = num;
+		        }
+		    }
+
+		    return new int[]{min2, max2};
+		}
+	  
+	  
+	 
+	  //Complejidad temporal O(n) solo se recorre el arreglo una vez 
+	  //Complejidad espacial O(1)
+	  
+	  //Justifica brevemente su respuesta 
+	  
+	  
+	  
 
 }
 
