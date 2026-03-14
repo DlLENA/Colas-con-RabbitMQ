@@ -17,16 +17,21 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 public class Main {
     private static final Set<String> BANK_QUEUES = Set.of("BANRURAL", "GYT", "BAC", "BI");
+    
+    // esta es donde esta el metodo control de las transacciones duplicadas
+    private static final Set<String> transaccionesProcesadas = ConcurrentHashMap.newKeySet();
+    private static final String COLA_DUPLICADOS = "cola_duplicados";
                                                   
     private static final ObjectMapper mapper = new ObjectMapper();
     
     // URL del Endpoint POST 
     private static final String API_POST_URL = "https://7e0d9ogwzd.execute-api.us-east-1.amazonaws.com/default/guardarTransacciones";
-   
+    
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -34,7 +39,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         String rabbitHost = System.getenv().getOrDefault("RABBIT_HOST", "localhost");
         int rabbitPort = Integer.parseInt(System.getenv().getOrDefault("RABBIT_PORT", "5672"));
-        String rabbitUser = System.getenv().getOrDefault("dilena13grijalva@gmail.com", "guest");
+        String rabbitUser = System.getenv().getOrDefault("dilena13grijalva@gmail.com", "guest"); 
         String rabbitPassword = System.getenv().getOrDefault("123456", "guest");
 
         ConnectionFactory factory = new ConnectionFactory();
@@ -45,6 +50,9 @@ public class Main {
 
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
+
+        // esta sera para la nuevo cola para nuestro rabbitMQ
+        channel.queueDeclare(COLA_DUPLICADOS, true, false, false, null);
 
         for (String queue : BANK_QUEUES) {
             channel.queueDeclare(queue, true, false, false, null);
@@ -57,7 +65,8 @@ public class Main {
 
     private static void startConsumer(Channel channel, String queue) throws Exception {
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-            boolean success = processAndPostMessage(queue, delivery);
+            //  channel para poder enviar mensajes a la cola_duplicados de rabbit 
+            boolean success = processAndPostMessage(queue, delivery, channel);
             
             // Si responde 200 -> hace ACK / Si responde error -> no confirma
             if (success) {
@@ -73,23 +82,36 @@ public class Main {
         channel.basicConsume(queue, false, deliverCallback, cancelCallback);
     }
 
-    private static boolean processAndPostMessage(String queue, Delivery delivery) {
+    private static boolean processAndPostMessage(String queue, Delivery delivery, Channel channel) {
         try {
             String payload = new String(delivery.getBody(), StandardCharsets.UTF_8);
             
             // Deserializa JSON a Objeto Java
             Transaccion tx = mapper.readValue(payload, Transaccion.class);
+            String idTx = tx.getIdTransaccion();
+
+            // mensaje que saldra en la cconsola qué cola está siendo atendida y el ID
+            System.out.println("\n---------------------------------------------------");
+            System.out.println("📥 ATENDIENDO COLA: " + queue + " | ID Solicitud: " + idTx);
+
+            if (transaccionesProcesadas.contains(idTx)) {
+                // si en caso de que ya exista esta se estara enviando a la  cola_duplicados y NO se hace el POST
+                channel.basicPublish("", COLA_DUPLICADOS, null, payload.getBytes(StandardCharsets.UTF_8));
+                
+                System.out.println("   -> ID Transaccion: " + idTx);
+                System.out.println("   -> Estado: DUPLICADA");
+                System.out.println("   -> Cola destino: " + COLA_DUPLICADOS);
+                System.out.println("---------------------------------------------------");
+                
+                return true; // Se hace ACK para sacarla de la cola original
+            }
 
             // datos solicitados
             tx.setNombre("Dilena Grijalva");         
             tx.setCarnet("0905-24-12697");        
             tx.setCorreo("dgrijalvat1@miumg.edu.gt");
-          
 
             String finalJson = mapper.writeValueAsString(tx);
-            
-            //para poder visualizar como se vera antes de enviarse a la base el inge walter 
-            //System.out.println("JSON armado: " + finalJson);
 
             // Invoca este endpoint POST (Header: application/json)
             HttpRequest request = HttpRequest.newBuilder()
@@ -102,8 +124,15 @@ public class Main {
 
             // Si responde 200 (o 201 Created)
             if (response.statusCode() == 200 || response.statusCode() == 201) {
-               
-                System.out.println("✅ Éxito para: " + tx.getNombre() + " (" + tx.getCarnet() + ") " + "(" + tx.getCorreo() + "). Enviando ACK...");
+                
+                // Si el POST fue exitoso, guardamos el ID para no volver a procesarlo
+                transaccionesProcesadas.add(idTx);
+                
+                System.out.println("   -> ID Transaccion: " + idTx);
+                System.out.println("   -> Estado: PROCESADA");
+                System.out.println("   -> Cola destino: API POST");
+                System.out.println("✅ Éxito para: " + tx.getNombre() + " (" + tx.getCarnet() + ") (" + tx.getCorreo() + "). Enviando ACK...");
+                System.out.println("---------------------------------------------------");
                 return true;
             } else {
                 System.err.println("❌ POST Fallido (HTTP " + response.statusCode() + ") para " + tx.getIdTransaccion());
@@ -116,4 +145,3 @@ public class Main {
         }
     }
 }
-
