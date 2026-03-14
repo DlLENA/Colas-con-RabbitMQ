@@ -26,8 +26,8 @@ public class Main {
         // Configuramos la conexión a RabbitMQ
         String rabbitHost = System.getenv().getOrDefault("RABBIT_HOST", "localhost");
         int rabbitPort = Integer.parseInt(System.getenv().getOrDefault("RABBIT_PORT", "5672"));
-        String rabbitUser = System.getenv().getOrDefault("RABBIT_USER", "guest");
-        String rabbitPassword = System.getenv().getOrDefault("RABBIT_PASSWORD", "guest");
+        String rabbitUser = System.getenv().getOrDefault("dilena13grijalva@gmail.com", "guest");
+        String rabbitPassword = System.getenv().getOrDefault("123456", "guest");
         int pollingSeconds = Integer.parseInt(System.getenv().getOrDefault("POLLING_SECONDS", "10"));
 
         ConnectionFactory factory = new ConnectionFactory();

@@ -26,7 +26,7 @@ public class Main {
     
     // URL del Endpoint POST 
     private static final String API_POST_URL = "https://7e0d9ogwzd.execute-api.us-east-1.amazonaws.com/default/guardarTransacciones";
-    
+   
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -34,8 +34,8 @@ public class Main {
     public static void main(String[] args) throws Exception {
         String rabbitHost = System.getenv().getOrDefault("RABBIT_HOST", "localhost");
         int rabbitPort = Integer.parseInt(System.getenv().getOrDefault("RABBIT_PORT", "5672"));
-        String rabbitUser = System.getenv().getOrDefault("RABBIT_USER", "guest");
-        String rabbitPassword = System.getenv().getOrDefault("RABBIT_PASSWORD", "guest");
+        String rabbitUser = System.getenv().getOrDefault("dilena13grijalva@gmail.com", "guest");
+        String rabbitPassword = System.getenv().getOrDefault("123456", "guest");
 
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(rabbitHost);
