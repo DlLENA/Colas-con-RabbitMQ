@@ -1,6 +1,7 @@
 package umg.edu.gt.banco.producer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -13,22 +14,22 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 public class Main {
     private static final String API_URL = "https://hly784ig9d.execute-api.us-east-1.amazonaws.com/default/transacciones";
-    private static final Set<String> processedIds = ConcurrentHashMap.newKeySet(); // Evita enviar duplicados
+    private static final Set<String> processedIds = ConcurrentHashMap.newKeySet();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static void main(String[] args) throws Exception {
-        // Configuramos la conexión a RabbitMQ
         String rabbitHost = System.getenv().getOrDefault("RABBIT_HOST", "localhost");
         int rabbitPort = Integer.parseInt(System.getenv().getOrDefault("RABBIT_PORT", "5672"));
         String rabbitUser = System.getenv().getOrDefault("dilena13grijalva@gmail.com", "guest");
         String rabbitPassword = System.getenv().getOrDefault("123456", "guest");
-        int pollingSeconds = Integer.parseInt(System.getenv().getOrDefault("POLLING_SECONDS", "10"));
 
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(rabbitHost);
@@ -36,87 +37,56 @@ public class Main {
         factory.setUsername(rabbitUser);
         factory.setPassword(rabbitPassword);
 
-        HttpClient client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+        HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 
-        try (Connection connection = factory.newConnection();
-             Channel channel = connection.createChannel()) {
-
-            System.out.println("✅ Producer iniciado. RabbitMQ en " + rabbitHost + ":" + rabbitPort);
-
-            // Bucle infinito para consultar la API cada 10 segundos
+        try (Connection connection = factory.newConnection(); Channel channel = connection.createChannel()) {
+            System.out.println("✅ Producer con PRIORIDADES iniciado...");
             while (true) {
                 int published = fetchAndPublish(client, channel);
-                System.out.println("🔄 Ciclo completado. Transacciones nuevas publicadas: " + published);
-                TimeUnit.SECONDS.sleep(pollingSeconds);
+                System.out.println("🔄 Ciclo completado. Publicadas: " + published);
+                TimeUnit.SECONDS.sleep(10);
             }
         }
     }
 
-    //metodo para enviar las solicitudes de las transacciones a RabbitMQ 
     private static int fetchAndPublish(HttpClient client, Channel channel) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(API_URL))
-                    .GET()
-                    .timeout(Duration.ofSeconds(20))
-                    .header("Content-Type", "application/json") // Header solicitado en instrucciones
-                    .build();
-
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(API_URL)).GET().header("Content-Type", "application/json").build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        
             
-            if (response.statusCode() != 200) {
-                System.err.println("❌ API devolvió status " + response.statusCode());
-                return 0;
-            }
+            if (response.statusCode() != 200) return 0;
 
-            //  Convertimos el JSON directamente a tu clase LoteTransacciones
             LoteTransacciones lote = mapper.readValue(response.body(), LoteTransacciones.class);
-            
-            // Si la API no devolvió transacciones, salimos
-            if (lote.getTransacciones() == null || lote.getTransacciones().isEmpty()) {
-                return 0;
-            }
+            if (lote.getTransacciones() == null || lote.getTransacciones().isEmpty()) return 0;
 
             int published = 0;
-            
-            // Recorremos la lista de objetos para las Transacciones que se le enviaran RabbitMQ 
             for (Transaccion tx : lote.getTransacciones()) {
                 String id = tx.getIdTransaccion();
                 String bank = tx.getBancoDestino();
-             
 
-                // Validamos que vengan datos correctos
-                if (id == null || id.isEmpty() || bank == null || bank.isEmpty()) {
-                    continue;
-                }
+                if (id == null || bank == null || !processedIds.add(id)) continue;
+                bank = bank.toUpperCase().trim();
+
+                // esto onfigurara la cola para que soporte prioridades máximo de 10
+                Map<String, Object> args = new HashMap<>();
+                args.put("x-max-priority", 10);
+                channel.queueDeclare(bank, true, false, false, args);
+
+                // aqui vamos a asignarle prioridad basada en el monto Mayor a 10,000 = Alta
+                int prioridadAsignada = (tx.getMonto() > 10000) ? 10 : 1;
                 
-                // Limpiamos el nombre del banco por si viene con espacios
-                bank = bank.toUpperCase().trim(); 
+                AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+                        .priority(prioridadAsignada)
+                        .build();
 
-                // Verificamos si ya procesamos esta transacción antes
-                if (!processedIds.add(id)) {
-                    continue; 
-                }
-
-                // Al poner esto aquí, si mañana la API manda un banco nuevo, 
-                // el sistema creará la cola automáticamente sin tener que cambiar el código.
-                channel.queueDeclare(bank, true, false, false, null);
-
-                // Convertimos el objeto Transaccion individual de vuelta a JSON (bytes) para enviarlo
                 byte[] payload = mapper.writeValueAsBytes(tx);
                 
-                // Publicamos en la cola dinámica
-                channel.basicPublish("", bank, null, payload);
+                // Publicamos enviando las propiedades props
+                channel.basicPublish("", bank, props, payload);
                 published++;
-          
             }
             return published;
-            
         } catch (Exception ex) {
-            System.err.println("💥 Error en fetchAndPublish: " + ex.getMessage());
             return 0;
         }
     }
