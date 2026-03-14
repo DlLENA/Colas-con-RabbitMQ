@@ -23,10 +23,13 @@ public class Main {
 	
 	  
 	  //Indicaciones 
-	  //Complejidad temporal O( )
-	  //Complejidad espacial O( )
+	  //Complejidad temporal O(n)
+	  //Complejidad espacial O(1)
 	  
 	  //Justifica brevemente su respuesta 
+	  //el metodo solo tiene un ciclo for lo que hace cada elemento se visite una vez y no importa si el arreglo tiene 5 o mas 
+	  //ya que solo crea y solo utiliza una variable primitiva que esta en memoria 
+	  
 	  
 	  
 	  
