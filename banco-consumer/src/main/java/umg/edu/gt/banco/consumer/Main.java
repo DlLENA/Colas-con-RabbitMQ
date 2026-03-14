@@ -32,7 +32,6 @@ public class Main {
                                                   
     private static final ObjectMapper mapper = new ObjectMapper();
     
-    // --- ⚠️ PARA LA CAPTURA 3 (ERRORES), CAMBIA ESTA URL POR UNA FALSA COMO "https://url-falsa.com" ---
     private static final String API_POST_URL = "https://7e0d9ogwzd.execute-api.us-east-1.amazonaws.com/default/guardarTransacciones";
     
     private static final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
