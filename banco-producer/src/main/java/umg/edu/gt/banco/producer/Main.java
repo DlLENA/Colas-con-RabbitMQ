@@ -81,7 +81,7 @@ public class Main {
 
                 byte[] payload = mapper.writeValueAsBytes(tx);
                 
-                // Publicamos enviando las propiedades props
+                // y luego publicamos enviando las propiedades props
                 channel.basicPublish("", bank, props, payload);
                 published++;
             }
